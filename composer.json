@@ -1,0 +1,15 @@
+{
+    "name": "grish/dfp-task",
+    "authors": [
+        {
+            "name": "Grish Vasilyan",
+            "email": "edg.ar.2001@mail.ru"
+        }
+    ],
+    "require": {
+        "rackspace/php-opencloud": "dev-master",
+        "googleads/googleads-php-lib": "^41.0",
+        "ext-json" : "*",
+        "php-pagination/php-pagination": "^2.0"
+    }
+}
