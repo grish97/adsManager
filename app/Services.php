@@ -3,6 +3,9 @@
 namespace app;
 
 use Google\AdsApi\AdManager\Util\v201902\AdManagerDateTimes;
+use Google\AdsApi\AdManager\v201902\AdUnit;
+use Google\AdsApi\AdManager\v201902\AdUnitTargeting;
+use Google\AdsApi\AdManager\v201902\ApiException;
 use Google\AdsApi\AdManager\v201902\AssetCreativeTemplateVariableValue;
 use Google\AdsApi\AdManager\v201902\BrowserTargeting;
 use Google\AdsApi\AdManager\v201902\Company;
@@ -43,8 +46,9 @@ class Services
 
         $this->lineItemId = null;
         $this->creativeId = null;
+        $this->advertiserId = null;
         $this->size = null;
-
+        $this->fileContent = null;
     }
 
     public function create() {
@@ -58,14 +62,36 @@ class Services
             return;
         }
 
+        //AD UNIT TARGETING
+        $lineItem_adUnitId = $data['lineItem_adUnitId'];
+
+        $adUnitTargeting = new AdUnitTargeting();
+        $adUnitTargeting->setAdUnitId($lineItem_adUnitId);
+
+        //ADVERTISER ID
+        $orderService = $this->serviceFactory->createOrderService($this->session);
+
+        $statementBuilder = (new StatementBuilder())
+            ->where('id = : id')
+            ->withBindVariableValue('id', $data['lineItem_orderId']);
+
+        $page = $orderService->getOrdersByStatement($statementBuilder->toStatement());
+
+        $advertiser = $page->getResults()[0];
+        $this->advertiserId = $advertiser->getAdvertiserId();
+
 
         $this->createLineItem(
             $data['lineItemName'],
             $data['lineItem_orderId'],
             $data['lineItemType'],
-            $data['lineItem_placementId'],
+            $adUnitTargeting,
             $data['lineItem_size']
         );
+
+        if(isset($_FILES['file']['tmp_name'][0])) {
+            $this->fileContent = uploadFile($_FILES['file']);
+        }
 
 
         if($data['hasCreative'] !== 'false') {
@@ -74,7 +100,7 @@ class Services
 
             $this->$function(
                 $data[$name . '_creative_name'],
-                $data[$name . '_creative_adId'],
+//                $data[$name . '_creative_adId'],
                 $data[$name . '_snippet'] ?? ''
             );
         }
@@ -130,7 +156,7 @@ class Services
         echo json_encode($orderId);
     }
 
-    public function createLineItem($lineItemName, $lineItem_orderId, $lineIte_type, $lineItemPlacementId, $lineItem_size) {
+    public function createLineItem($lineItemName, $lineItem_orderId, $lineIte_type, $adUnitTargeting, $lineItem_size) {
         $size = _explode($lineItem_size);
 
         $this->size = $size;
@@ -138,7 +164,8 @@ class Services
         $lineItemService = $this->serviceFactory->createLineItemService($this->session);
 
         $inventoryTargeting = new InventoryTargeting();
-        $inventoryTargeting->setTargetedPlacementIds([$lineItemPlacementId]);
+
+        $inventoryTargeting->setTargetedAdUnits([$adUnitTargeting]);
 
         $browserTechnology = new Technology();
         $browserTechnology->setId(500072);
@@ -184,6 +211,7 @@ class Services
         $goal->setGoalType(GoalType::LIFETIME);
         $lineItem->setPrimaryGoal($goal);
 
+
         $result = $lineItemService->createLineItems([$lineItem])[0];
 
         $id = $result->getId();
@@ -197,12 +225,11 @@ class Services
         $this->lineItemId = $result->getId();
     }
 
-    public function createImageCreative($creativeName, $creative_advertiserId) {
+    public function createImageCreative($creativeName) {
         $creativeService = $this->serviceFactory->createCreativeService($this->session);
-
         $imageCreative = new ImageCreative();
         $imageCreative->setName($creativeName);
-        $imageCreative->setAdvertiserId($creative_advertiserId);
+        $imageCreative->setAdvertiserId($this->advertiserId);
         $imageCreative->setDestinationUrl('http://google.com');
 
         $size = new Size();
@@ -214,7 +241,8 @@ class Services
         $creativeAsset = new CreativeAsset();
         $creativeAsset->setFileName(300);
         $creativeAsset->setAssetByteArray(
-            file_get_contents('https://goo.gl/3b9Wfh')
+            $this->fileContent
+//            file_get_contents('https://goo.gl/3b9Wfh')
         );
 
         $imageCreative->setPrimaryImageAsset($creativeAsset);
@@ -232,18 +260,18 @@ class Services
         $this->associate();
     }
 
-    public function createNativeCreative($name, $adId, $snippet = '') {
+    public function createNativeCreative($name, $snippet = '') {
         $creativeService = $this->serviceFactory->createCreativeService($this->session);
 
         $nativeAppInstallTemplateId = 10004400;
 
         $size = new Size();
-        $size->setWidth(1);
-        $size->setHeight(1);
+        $size->setWidth($this->size['width']);
+        $size->setHeight($this->size['height']);
 
         $nativeAppInstallCreative = new TemplateCreative();
         $nativeAppInstallCreative->setName($name);
-        $nativeAppInstallCreative->setAdvertiserId($adId);
+        $nativeAppInstallCreative->setAdvertiserId($this->advertiserId);
         $nativeAppInstallCreative->setDestinationUrl(
             'https://play.google.com/store/apps/details?id=com.google.fpl.'
             . 'pie_noon'
@@ -326,15 +354,19 @@ class Services
             'id' => $result->getId(),
             'name' => $result->getName()
         ];
+
+        $this->creativeId = $result->getId();
+
+        $this->associate();
     }
 
-    public function createThirdPartyCreative($name, $adId, $snippet) {
+    public function createThirdPartyCreative($name, $snippet) {
         $creativeService = $this->serviceFactory->createCreativeService($this->session);
 
         $thirdParty = new ThirdPartyCreative();
 
         $thirdParty->setName($name);
-        $thirdParty->setAdvertiserId($adId);
+        $thirdParty->setAdvertiserId($this->advertiserId);
 
         $thirdParty->setSnippet($snippet);
 
@@ -348,15 +380,19 @@ class Services
           'id' => $result->getId(),
           'name' => $result->getName()
         ];
+
+        $this->creativeId = $result->getId();
+
+        $this->associate();
     }
 
-    public function createCustomCreative($name, $adId, $snippet) {
+    public function createCustomCreative($name, $snippet) {
         $creativeService = $this->serviceFactory->createCreativeService($this->session);
 
         $custom = new CustomCreative();
 
         $custom->setName($name);
-        $custom->setAdvertiserId($adId);
+        $custom->setAdvertiserId($this->advertiserId);
 
         $size = new Size();
         $size->setWidth($this->size['width']);
@@ -374,13 +410,18 @@ class Services
             'name' => $result->getName()
         ];
 
+        $this->creativeId = $result->getId();
+
+        $this->associate();
     }
 
     public function associate() {
         $licaService = $this->serviceFactory->createLineItemCreativeAssociationService($this->session);
 
         $lica = new LineItemCreativeAssociation();
+
         $lica->setLineItemId($this->lineItemId);
+
         $lica->setCreativeId($this->creativeId);
 
         $licaService->createLineItemCreativeAssociations([$lica]);

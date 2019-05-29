@@ -237,7 +237,7 @@ $(document).ready(function () {
                $(`#loading`).addClass(`d-none`);
            });
 
-           $(document).on(`focus`, `input`, (e) => {
+           $(document).on(`focus`, `input`, () => {
                $(`.errorBlock`).remove();
            })
        }

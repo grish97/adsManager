@@ -4,13 +4,14 @@ namespace app;
 
 use Google\AdsApi\AdManager\v201902\CompanyType;
 use Google\AdsApi\AdManager\Util\v201902\StatementBuilder;
+use Google\AdsApi\AdManager\v201902\InventoryService;
+use Google\AdsApi\AdManager\v201902\Order;
+use Google\AdsApi\AdManager\v201902\Placement;
 use Google\AdsApi\AdManager\v201902\ServiceFactory;
 
 class Home
 {
     public $data;
-    public $session;
-    public $serviceFactory;
 
     public function __construct($session) {
         $this->session = $session;
@@ -19,16 +20,16 @@ class Home
     }
 
     public function index() {
+//        echo view('home.home', ['data' => $this->data]);
         echo $this->generateTemplate('home', $this->data);
     }
 
     public function getData() {
-        //ADVERTISER ID
+        //ADVERTISER
         $companyService = $this->serviceFactory->createCompanyService($this->session);
 
         $statementBuilder = (new StatementBuilder())
             ->where('type = :type')
-            ->limit(25)
             ->withBindVariableValue('type', CompanyType::ADVERTISER);
 
         $page = $companyService->getCompaniesByStatement(
@@ -47,12 +48,11 @@ class Home
             ];
         }
 
-        //ORDER ID
+        //ORDER
         $orderService = $this->serviceFactory->createOrderService($this->session);
 
         $statementBuilder = (new StatementBuilder())
             ->where('isArchived = :isArchived')
-            ->limit(25)
             ->withBindVariableValue('isArchived', false);
 
         $orderPage = $orderService->getOrdersByStatement(
@@ -70,36 +70,35 @@ class Home
             ];
         }
 
-        //PLACEMENT ID
-        $placementService = $this->serviceFactory->createPlacementService($this->session);
+        //AD UNIT ID
+        $inventoryService = $this->serviceFactory->createInventoryService($this->session);
 
-        $statementBuilder = (new StatementBuilder())
-            ->limit(25);
+        $statementBuilder = (new StatementBuilder());
 
-        $placementPage = $placementService->getPlacementsByStatement(
+
+        $inventoryPage = $inventoryService->getAdUnitsByStatement(
             $statementBuilder->toStatement()
         );
 
-        $placements = $placementPage->getResults();
+        $adUnits = $inventoryPage->getResults();
 
-        foreach($placements as $key => $placement) {
-            $id = $placement->getId();
-            $name = $placement->getName();
+        foreach($adUnits as $key => $adUnit) {
+            $id = $adUnit->getId();
+            $name = $adUnit->getName();
 
-            $this->data['placementId'][$key] = [
+            $this->data['adUnitId'][$key] = [
                 'id' => $id,
                 'name' => $name
             ];
         }
 
-        //LINE ITEM
+        //CREATIVE PLACEHOLDER SIZE
         $creativePlaceholderSize = [];
 
         $lineItemService = $this->serviceFactory->createLineItemService($this->session);
 
         $statementBuilder = (new StatementBuilder())
-            ->where('status = :status')
-            ->withBindVariableValue('status', 'DRAFT');
+            ->orderBY('id ASC');
 
         $lineItemPage = $lineItemService->getLineItemsByStatement(
             $statementBuilder->toStatement()
@@ -126,7 +125,7 @@ class Home
         if(file_exists($file)) {
             ob_start();
             extract($data);
-            require $file;
+            require "$file";
             return ob_get_clean();
         }
 
