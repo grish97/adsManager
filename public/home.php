@@ -97,7 +97,7 @@
                             <option value="thirdParty">Third party</option>
                         </select>
                     </div>
-                    <button class="btn btn-success rounded-0 create" type="submit">Create</button>
+                    <button class="btn btn-success rounded-0 create float-right" type="submit">Create</button>
                 </form>
 
                 <div class="creativeFields">
@@ -109,19 +109,9 @@
                                 <label for="image_creative_name">Name</label>
                                 <input type="text" class="form-control" name="image_creative_name" id="image_creative_name" placeholder="Name">
                             </div>
-<!--                            <div class="form-group col">-->
-<!--                                <label for="image_creative_adId">Advertiser</label>-->
-<!--                                <select id="image_creative_adId" class="form-control" name="image_creative_adId">-->
-<!--                                    <option value="">Select Here</option>-->
-<!--                                    --><?php //foreach ($data['advertiserId'] as $val) : ?>
-<!--                                        <option value="--><?//= $val['id']?><!--">--><?//= $val['name']?><!--</option>-->
-<!--                                    --><?php //endforeach ?>
-<!--                                </select>-->
-<!--                            </div>-->
-
                             <div class="form-group col">
                                 <label for="creative_image">Creative Image</label>
-                                <input type="file"  class="form-control" id="creative_image" accept="image/*">
+                                <input type="file" name="file"  class="form-control" id="creative_image" accept="image/*">
                             </div>
                         </div>
                     </div>
@@ -133,16 +123,6 @@
                                 <label for="native_creative_name">Name</label>
                                 <input type="text" class="form-control" name="native_creative_name" id="native_creative_name" placeholder="Name">
                             </div>
-<!--                            <div class="form-group col">-->
-<!--                                <label for="native_creative_adId">Advertiser</label>-->
-<!--                                <select id="native_creative_adId" class="form-control" name="native_creative_adId">-->
-<!--                                    <option value="">Select Here</option>-->
-<!--                                    <option value="" class="newService">Add Order</option>-->
-<!--                                    --><?php //foreach ($data['advertiserId'] as $val) : ?>
-<!--                                        <option value="--><?//= $val['id']?><!--">--><?//= $val['name']?><!--</option>-->
-<!--                                    --><?php //endforeach ?>
-<!--                                </select>-->
-<!--                            </div>-->
                         </div>
                     </div>
                     <!--CUSTOM CREATIVE-->
@@ -153,15 +133,6 @@
                                 <label for="custom_creative_name">Name</label>
                                 <input type="text" class="form-control" name="custom_creative_name" id="custom_creative_name" placeholder="Name">
                             </div>
-<!--                            <div class="form-group col">-->
-<!--                                <label for="custom_creative_adId">Advertiser</label>-->
-<!--                                <select id="custom_creative_adId" class="form-control" name="custom_creative_adId">-->
-<!--                                    <option value="">Select Here</option>-->
-<!--                                    --><?php //foreach ($data['advertiserId'] as $val) : ?>
-<!--                                        <option value="--><?//= $val['id']?><!--">--><?//= $val['name']?><!--</option>-->
-<!--                                    --><?php //endforeach ?>
-<!--                                </select>-->
-<!--                            </div>-->
                             <div class="md-form">
                                 <label for="htmlSnippet">Html Snippet</label>
                                 <textarea id="htmlSnippet" class="md-textarea form-control" rows="2" name="custom_snippet"></textarea>
@@ -176,15 +147,6 @@
                                 <label for="thirdParty_creative_name">Name</label>
                                 <input type="text" class="form-control" name="thirdParty_creative_name" id="thirdParty_creative_name" placeholder="Name">
                             </div>
-<!--                            <div class="form-group col">-->
-<!--                                <label for="thirdParty_creative_adId">Advertiser</label>-->
-<!--                                <select id="thirdParty_creative_adId" class="form-control" name="thirdParty_creative_adId">-->
-<!--                                    <option value="">Select Here</option>-->
-<!--                                    --><?php //foreach ($data['advertiserId'] as $val) : ?>
-<!--                                        <option value="--><?//= $val['id']?><!--">--><?//= $val['name']?><!--</option>-->
-<!--                                    --><?php //endforeach ?>
-<!--                                </select>-->
-<!--                            </div>-->
                             <div class="form-group">
                                 <label for="snippet">Snippet</label>
                                 <textarea id="snippet" class="form-control" rows="2" name="thirdParty_snippet"></textarea>
@@ -197,7 +159,7 @@
         <!--TABLE-->
         <div class="container mt-5">
             <table class="table d-none table-bordered table-striped">
-                <caption>Created Service List</caption>
+                <caption>Created Services List</caption>
                 <thead>
                 <tr>
                     <th>SERVICE</th>

@@ -49,6 +49,7 @@ class Services
         $this->advertiserId = null;
         $this->size = null;
         $this->fileContent = null;
+        $this->creativeName = null;
     }
 
     public function create() {
@@ -80,7 +81,6 @@ class Services
         $advertiser = $page->getResults()[0];
         $this->advertiserId = $advertiser->getAdvertiserId();
 
-
         $this->createLineItem(
             $data['lineItemName'],
             $data['lineItem_orderId'],
@@ -89,18 +89,17 @@ class Services
             $data['lineItem_size']
         );
 
-        if(isset($_FILES['file']['tmp_name'][0])) {
+        if(isset($_FILES['file']['tmp_name'])) {
             $this->fileContent = uploadFile($_FILES['file']);
         }
 
-
         if($data['hasCreative'] !== 'false') {
+            $this->creativeName = $data['hasCreative'];
             $name = $data['hasCreative'];
             $function = "create" . ucfirst($name). "Creative";
 
             $this->$function(
                 $data[$name . '_creative_name'],
-//                $data[$name . '_creative_adId'],
                 $data[$name . '_snippet'] ?? ''
             );
         }
@@ -183,11 +182,12 @@ class Services
         $lineItem->setName($lineItemName);
         $lineItem->setOrderId($lineItem_orderId);
         $lineItem->setTargeting($targeting);
-        $lineItem->setLineItemType(LineItemType::STANDARD);
+        $lineItem->setLineItemType(LineItemType::PRICE_PRIORITY);
         $lineItem->setAllowOverbook(true);
 
         $creativePlaceholder = new CreativePlaceholder();
-        $creativePlaceholder->setSize(new Size($size['width'], $size['height'], false));
+        $creativePlaceholder->setSize(new Size($this->size['width'], $this->size['height'], false));
+
 
         $lineItem->setCreativePlaceholders([$creativePlaceholder]);
 
@@ -212,7 +212,18 @@ class Services
         $lineItem->setPrimaryGoal($goal);
 
 
-        $result = $lineItemService->createLineItems([$lineItem])[0];
+        try {
+            $result = $lineItemService->createLineItems([$lineItem]);
+        }catch(ApiException $exception) {
+            $expParts = explode(' ', $exception->getMessage1());
+
+            $expParts = str_replace('[', '', $expParts[0]);
+
+            echo json_encode(['exception' => $expParts]);
+            die();
+        }
+
+        $result = $result[0];
 
         $id = $result->getId();
         $name = $result->getName();
@@ -239,7 +250,7 @@ class Services
         $imageCreative->setSize($size);
 
         $creativeAsset = new CreativeAsset();
-        $creativeAsset->setFileName(300);
+        $creativeAsset->setFileName('image'. uniqid());
         $creativeAsset->setAssetByteArray(
             $this->fileContent
 //            file_get_contents('https://goo.gl/3b9Wfh')
@@ -266,21 +277,21 @@ class Services
         $nativeAppInstallTemplateId = 10004400;
 
         $size = new Size();
-        $size->setWidth($this->size['width']);
-        $size->setHeight($this->size['height']);
+        $size->setWidth(1);
+        $size->setHeight(1);
+        $size->setIsAspectRatio(false);
 
         $nativeAppInstallCreative = new TemplateCreative();
         $nativeAppInstallCreative->setName($name);
-        $nativeAppInstallCreative->setAdvertiserId($this->advertiserId);
+        $nativeAppInstallCreative->setAdvertiserId($this->advertiserId);//4558636797
         $nativeAppInstallCreative->setDestinationUrl(
             'https://play.google.com/store/apps/details?id=com.google.fpl.'
             . 'pie_noon'
         );
 
-        $nativeAppInstallCreative->setSize($size);
-
         $nativeAppInstallCreative->setCreativeTemplateId($nativeAppInstallTemplateId);
 
+        $nativeAppInstallCreative->setSize($size);
 
         $headLineVarValue = new StringCreativeTemplateVariableValue();
         $headLineVarValue->setUniqueName('Headline');
@@ -424,7 +435,16 @@ class Services
 
         $lica->setCreativeId($this->creativeId);
 
-        $licaService->createLineItemCreativeAssociations([$lica]);
+        if($this->creativeName === 'native') {
+            $lica->setSizes([new Size(1, 1, false)]);
+        }
+
+        try{
+            $licaService->createLineItemCreativeAssociations([$lica]);
+        }catch(ApiException $exception) {
+             echo json_encode(['exception' => $exception->getMessage1()]);
+             exit;
+        }
     }
 
     public function delete() {

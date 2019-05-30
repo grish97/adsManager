@@ -28,15 +28,21 @@ $(document).ready(function () {
                     createButton.removeAttr(`disabled`);
 
                     if(data['error']) {
-                        toastr.error(`Fix Errors!`);
+                        toastr.error('Fail Request!');
                         services.generateError(data['error']);
+                        return false;
+                    }
+
+                    if(data['exception']) {
+                        toastr.error(data['exception']);
                         return false;
                     }
 
                     if(data.length !== 0) services.generate(data);
 
                 },
-                error : () => {
+                error : (err) => {
+                    console.log(err);
                     createButton.removeAttr(`disabled`);
                     services.fail();
                 }
@@ -50,6 +56,8 @@ $(document).ready(function () {
                tbody = $(`tbody`);
 
            $.each(data, (key, val) => {
+               key = (key.search(`_`) == '-1') ? key : key.replace(`_`, `  `);
+
                let block = `<tr>
                                 <th>${key.toUpperCase()}</th>
                                 <td>${val.id}</td>

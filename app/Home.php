@@ -25,6 +25,7 @@ class Home
     }
 
     public function getData() {
+//        $liS = $this->serviceFactory->createLineItemService()
         //ADVERTISER
         $companyService = $this->serviceFactory->createCompanyService($this->session);
 
